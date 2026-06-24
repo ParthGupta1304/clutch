@@ -1,0 +1,6 @@
+{
+  "name": "Clutch",
+  "description": "A proactive, modern AI productivity companion that takes the 'first move' for tasks to reduce activation energy—helping students, solo founders, and young professionals bypass procrastinating on difficult commitments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

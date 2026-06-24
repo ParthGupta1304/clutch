@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "commitment": {
+      "title": "Commitment",
+      "description": "A single commitment or task that has panic levels and actionable next steps.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "effort_minutes": { "type": "number" },
+        "consequence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "source": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "panic_score": { "type": "number" },
+        "is_custom": { "type": "boolean" }
+      },
+      "required": ["id", "title", "deadline", "effort_minutes", "consequence", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/commitments/{commitmentId}": {
+      "schema": "commitment",
+      "description": "Subcollection under users holding their commitments"
+    }
+  }
+}

@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Geist", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Animations from the new design system mockup */
+@keyframes clutchBreathe {
+  0%, 100% { transform: scale(1); opacity: .5; }
+  50% { transform: scale(1.22); opacity: 1; }
+}
+
+@keyframes clutchPulse {
+  0%, 100% { opacity: .3; }
+  50% { opacity: .9; }
+}
+
+@keyframes clutchShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes clutchRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes clutchGlow {
+  0%, 100% { opacity: .35; transform: scale(1); }
+  50% { opacity: .6; transform: scale(1.12); }
+}
+
+@keyframes clutchToast {
+  0% { opacity: 0; transform: translate(-50%, 16px); }
+  12%, 88% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 8px); }
+}
+
+.animate-clutch-breathe {
+  animation: clutchBreathe 3.4s ease-in-out infinite;
+}
+
+.animate-clutch-pulse {
+  animation: clutchPulse 1.2s ease-in-out infinite;
+}
+
+.animate-clutch-shimmer {
+  background: linear-gradient(90deg, #EDE8DB 25%, #F6F2E9 37%, #EDE8DB 63%);
+  background-size: 400% 100%;
+  animation: clutchShimmer 1.5s linear infinite;
+}
+
+.animate-clutch-rise {
+  animation: clutchRise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-clutch-glow {
+  animation: clutchGlow 6s ease-in-out infinite;
+}
+
+.animate-clutch-toast {
+  animation: clutchToast 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Scrollbar styling matching the new warm paper design system */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3EFE6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D7D1C2;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B6A98E;
+}
+
+/* Dynamic custom elements matching mockup classes */
+.glow-accent {
+  box-shadow: 0 6px 14px -6px var(--accent-strong);
+}
+
+.shadow-card {
+  box-shadow: 0 1px 2px rgba(28,27,25,.04), 0 24px 46px -30px rgba(28,27,25,.3);
+}
+
+.shadow-hero {
+  box-shadow: 0 1px 2px rgba(28,27,25,.04), 0 26px 50px -28px rgba(28,27,25,.28);
+}
+
+
