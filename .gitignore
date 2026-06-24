@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local runtime storage (file fallback when Firestore is unavailable)
+data/
+
+# Local working notes / brief
+prompt.md

@@ -156,10 +156,10 @@ export default function App() {
         '--accent-soft': '#C7E0D9',
       } as CSSProperties
     : {
-        '--accent': '#3E3C8C',
-        '--accent-strong': '#2E2C6E',
-        '--accent-tint': '#ECEBF6',
-        '--accent-soft': '#D9D7EE',
+        '--accent': '#4F46E5',
+        '--accent-strong': '#4338CA',
+        '--accent-tint': '#EEF2FF',
+        '--accent-soft': '#E0E7FF',
       } as CSSProperties;
 
   const authFetch = async (url: string, options: RequestInit = {}) => {
@@ -1274,7 +1274,7 @@ export default function App() {
                   safeSetLocalStorage('clutch_accent', 'indigo');
                 }} 
                 title="Indigo Theme" 
-                className={`w-[26px] h-[26px] rounded-full bg-[#3E3C8C] border-none cursor-pointer relative flex items-center justify-center p-0 transition-all ${accent === 'indigo' ? 'ring-2 ring-[#1C1B19] ring-offset-1' : 'opacity-80 hover:opacity-100'}`}
+                className={`w-[26px] h-[26px] rounded-full bg-[#4F46E5] border-none cursor-pointer relative flex items-center justify-center p-0 transition-all ${accent === 'indigo' ? 'ring-2 ring-[#1C1B19] ring-offset-1' : 'opacity-80 hover:opacity-100'}`}
               >
                 {accent === 'indigo' && <span className="absolute inset-0 rounded-full border border-white"></span>}
               </button>
@@ -2096,7 +2096,7 @@ export default function App() {
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-1.5">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display">The First Move</h3>
-                      <span className="text-[9px] uppercase font-mono tracking-wider font-bold bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] px-1.5 py-0.5 rounded leading-none">Auto-Initiated</span>
+                      <span className="text-[9px] uppercase font-mono tracking-wider font-bold bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] px-1.5 py-0.5 rounded leading-none">Auto-Initiated</span>
                     </div>
                     <p className="text-xs text-[#6B675E]">Approve this generated boilerplate, email, study template, or outline helper to build starting momentum.</p>
                   </div>
@@ -2249,7 +2249,7 @@ export default function App() {
                   <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
                     <div className="space-y-1">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
-                        <span className="bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] p-1 rounded">📚</span>
+                        <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded">📚</span>
                         <span>Interactive Adaptive Study Pack</span>
                       </h3>
                       <p className="text-xs text-[#6B675E]">Practice predictive questions and train memorization via flashcards.</p>
@@ -2506,7 +2506,7 @@ export default function App() {
                   <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
                     <div className="space-y-1">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
-                        <span className="bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] p-1 rounded"><Cpu className="w-4 h-4" /></span>
+                        <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded"><Cpu className="w-4 h-4" /></span>
                         <span>Expert Agent Mode: Sandbox Solver</span>
                       </h3>
                       <p className="text-xs text-[#6B675E]">Run multi-step automated searches, code trials, and site reading inside Google Cloud.</p>
