@@ -8,7 +8,11 @@ import { WebSocketServer } from 'ws';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
+// Load .env first, then .env.local (local secrets, per README). Neither overrides
+// an already-set process.env var, so production injection (AI Studio / Cloud Run)
+// still wins.
 dotenv.config();
+dotenv.config({ path: path.resolve('.env.local') });
 
 
 // Ensure Gemini Client is only initialized if API KEY is available
