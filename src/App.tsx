@@ -1307,16 +1307,20 @@ export default function App() {
   const details = activeTask ? getPanicBreakdown(activeTask, nowLabel) : null;
 
   return (
-    <div 
+    <div
       style={accentStyles}
-      className="min-h-screen bg-[#E8E3D7] text-[#1C1B19] flex flex-col font-sans transition-all duration-300 antialiased selection:bg-[var(--accent-soft)] selection:text-[var(--accent-strong)]"
+      className={`min-h-screen flex flex-col font-sans transition-all duration-300 antialiased ${
+        isPanicMode
+          ? 'bg-[#0B0B12] text-slate-100 selection:bg-rose-500/30 selection:text-white'
+          : 'bg-[#E8E3D7] text-[#1C1B19] selection:bg-[var(--accent-soft)] selection:text-[var(--accent-strong)]'
+      }`}
     >
       
       {/* Top micro notifications header */}
       <div className="h-[3px] bg-gradient-to-r from-indigo-500 via-rose-500 to-amber-500 w-full" id="brand-indicator"></div>
 
       {/* Main Bar Navigation */}
-      <header className="border-b border-[#D7D1C2] bg-[#F3EFE6]/90 backdrop-blur-md sticky top-0 z-40 transition-shadow duration-300 shadow-[0_1px_3px_rgba(28,27,25,0.05)] text-[#1C1B19]" id="header-bar">
+      <header className={`border-b border-[#D7D1C2] bg-[#F3EFE6]/90 backdrop-blur-md sticky top-0 z-40 transition-shadow duration-300 shadow-[0_1px_3px_rgba(28,27,25,0.05)] text-[#1C1B19] ${isPanicMode ? 'hidden' : ''}`} id="header-bar">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-[30px] h-[30px] rounded-[9px] bg-[var(--accent)] flex items-center justify-center glow-accent shrink-0" id="logo-block">
@@ -1477,7 +1481,17 @@ export default function App() {
       {/* Main Full-Scale Canvas */}
       {isPanicMode ? (
         <main className="flex-grow w-full py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto" id="panic-layout">
-          
+
+          {/* Subtle, always-reachable exit (full-screen takeover) */}
+          <button
+            onClick={() => setIsPanicMode(false)}
+            className="fixed top-5 right-5 z-50 text-[11px] font-mono text-slate-400 hover:text-white border border-slate-700/60 hover:border-slate-500 bg-slate-900/40 backdrop-blur-sm rounded-full px-3.5 py-1.5 transition-colors cursor-pointer flex items-center gap-1.5"
+            id="panic-exit-top"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Exit panic mode</span>
+          </button>
+
           {!highestPanicTask ? (
             /* Calm State: No pending tasks! */
             <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 md:p-16 text-center space-y-6 max-w-2xl mx-auto shadow-xl" id="panic-all-clear">
@@ -1531,7 +1545,7 @@ export default function App() {
                   <div className="text-[10px] uppercase font-bold text-slate-400 font-mono tracking-widest mb-1">
                     COUNTDOWN TO DEADLINE
                   </div>
-                  <div className="font-mono text-base md:text-lg font-black text-rose-400 tracking-tight">
+                  <div className="font-mono text-2xl md:text-3xl font-black text-amber-400 tracking-tight tabular-nums">
                     {getCountdownText(highestPanicTask.deadline, nowLabel)}
                   </div>
                   <div className="text-[9px] text-slate-500 font-mono mt-1">
