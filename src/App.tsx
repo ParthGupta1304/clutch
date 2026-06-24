@@ -26,6 +26,8 @@ import {
   HelpCircle,
   FileCode,
   Calendar,
+  CalendarPlus,
+  CalendarClock,
   X,
   Smartphone,
   Mail,
@@ -653,6 +655,71 @@ export default function App() {
     } catch {
       return { text: dateStr, style: 'text-slate-600' };
     }
+  };
+
+  // ─── Schedule: propose right-sized focus blocks, then open Google Calendar (approve-first) ───
+  const proposeCalendarBlocks = (commitment: Commitment) => {
+    const now = Date.now();
+    const deadline = new Date(commitment.deadline).getTime();
+    const effort = Math.max(10, commitment.effort_minutes || 30);
+
+    // Right-size each session: short tasks stay a single block; longer ones split into ~50-min focus blocks.
+    const sessionLen = effort <= 40 ? effort : 50;
+    const numSessions = Math.min(4, Math.max(1, Math.round(effort / sessionLen)));
+
+    const hoursUntil = (deadline - now) / 3600000;
+    const blocks: { start: Date; end: Date }[] = [];
+
+    if (hoursUntil <= 24) {
+      // Crunch mode: stack blocks today, starting ~1h from now, back-to-back with short breathers.
+      let cursor = now + 60 * 60 * 1000;
+      for (let i = 0; i < numSessions; i++) {
+        const start = new Date(cursor);
+        const end = new Date(cursor + sessionLen * 60 * 1000);
+        if (end.getTime() > deadline) break;
+        blocks.push({ start, end });
+        cursor = end.getTime() + 15 * 60 * 1000;
+      }
+      if (blocks.length === 0) {
+        const start = new Date(now + 30 * 60 * 1000);
+        blocks.push({ start, end: new Date(start.getTime() + sessionLen * 60 * 1000) });
+      }
+    } else {
+      // Spread one block per upcoming morning at 10:00 local, all before the deadline.
+      for (let i = 0; i < numSessions; i++) {
+        const start = new Date(now);
+        start.setDate(start.getDate() + i + 1);
+        start.setHours(10, 0, 0, 0);
+        const end = new Date(start.getTime() + sessionLen * 60 * 1000);
+        if (end.getTime() > deadline) break;
+        blocks.push({ start, end });
+      }
+      if (blocks.length === 0) {
+        const start = new Date(now + 60 * 60 * 1000);
+        blocks.push({ start, end: new Date(start.getTime() + sessionLen * 60 * 1000) });
+      }
+    }
+    return { blocks, sessionLen };
+  };
+
+  const toCalStamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+  const formatBlockLabel = (start: Date, end: Date) => {
+    const day = start.toLocaleDateString('en-IN', { weekday: 'short' });
+    const s = start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+    const e = end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+    return `${day} ${s}–${e}`;
+  };
+
+  const openGoogleCalendar = (commitment: Commitment, start: Date, end: Date) => {
+    const text = encodeURIComponent(`Clutch focus: ${commitment.title}`);
+    const dates = `${toCalStamp(start)}/${toCalStamp(end)}`;
+    const details = encodeURIComponent(
+      `Focus block proposed by Clutch to build momentum on "${commitment.title}" before its deadline.\n\nDeadline: ${new Date(commitment.deadline).toLocaleString('en-IN')}`
+    );
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setStatusMessage('Opened Google Calendar — review and save your focus block.');
   };
 
   // Drag and Drop files to analyze
@@ -2242,6 +2309,43 @@ export default function App() {
                 )}
 
               </div>
+
+              {/* SCHEDULE: propose right-sized focus blocks (approve-first) */}
+              {activeTask && activeTask.status !== 'completed' && (() => {
+                const { blocks, sessionLen } = proposeCalendarBlocks(activeTask);
+                if (blocks.length === 0) return null;
+                return (
+                  <div className="bg-[#FCFAF5] border border-[#E6E0D3] rounded-2xl p-6 shadow-card mt-6" id="schedule-segment">
+                    <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
+                          <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded flex items-center justify-center"><CalendarClock className="w-4 h-4" /></span>
+                          <span>Schedule focus blocks</span>
+                        </h3>
+                        <p className="text-xs text-[#6B675E]">
+                          Clutch right-sized {blocks.length} {sessionLen}-min block{blocks.length > 1 ? 's' : ''} before your deadline. Approve any to add it to Google Calendar.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {blocks.map((b, i) => (
+                        <button
+                          key={i}
+                          onClick={() => openGoogleCalendar(activeTask, b.start, b.end)}
+                          className="group flex items-center gap-2 bg-[#F3EFE6] hover:bg-[var(--accent-tint)] border border-[#E6E0D3] hover:border-[var(--accent-soft)] rounded-full pl-3 pr-3.5 py-2 text-xs font-medium text-[#1C1B19] transition-all cursor-pointer shadow-sm"
+                          title="Open a pre-filled Google Calendar event"
+                        >
+                          <CalendarPlus className="w-3.5 h-3.5 text-[var(--accent)]" />
+                          <span className="font-mono">{formatBlockLabel(b.start, b.end)}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-[#9D988C] mt-3 font-mono">
+                      Opens a pre-filled Google Calendar event in a new tab — nothing is added until you save it.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* STUDY PACK INTERACTIVE PANEL */}
               {activeTask && (activeTask.artifact?.type === 'study' || activeTask.title.toLowerCase().match(/(study|exam|assignment|syllabus|test|quiz|lecture|notes|revision|read)/i)) && (
