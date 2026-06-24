@@ -136,16 +136,8 @@ async function getCommitmentsForRequest(req: express.Request): Promise<Commitmen
       const commitmentsCol = collection(db, 'users', userId, 'commitments');
       const qSnap = await getDocs(commitmentsCol);
       let list = qSnap.docs.map(doc => doc.data() as Commitment);
-      
-      if (list.length === 0) {
-        const seed = getSeedCommitments();
-        for (const item of seed) {
-          const docRef = doc(db, 'users', userId, 'commitments', item.id);
-          await setDoc(docRef, item);
-        }
-        return seed;
-      }
-      
+
+      // New accounts start empty — no demo/seed data is injected.
       return list.map(c => ({
         ...c,
         next_actions: c.next_actions || []
@@ -247,88 +239,22 @@ function calculatePanicScore(deadline: string, effort_minutes: number, consequen
 const DATA_DIR = path.resolve('data');
 const DATA_FILE = path.join(DATA_DIR, 'commitments.json');
 
-function getSeedCommitments(): Commitment[] {
-  return [
-    {
-      id: "seed-1",
-      title: "MA 102 Assignment 3: Complex Integration",
-      deadline: "2026-06-25T14:30:00Z", // 2 days from June 23
-      effort_minutes: 180,
-      consequence: "high",
-      source: "Assignment Portal screenshot",
-      status: "pending",
-      next_actions: [
-        { id: "na-1-1", text: "Download the complex integration assignment PDF", completed: false },
-        { id: "na-1-2", text: "Review Euler's formula and Cauchy-Goursat residue theorems", completed: false },
-        { id: "na-1-3", text: "Draft answers for Question 1 and 2 on rough notebook", completed: false },
-        { id: "na-1-4", text: "Scan and compile answers to PDF", completed: false }
-      ],
-      artifact: {
-        type: "study",
-        title: "Practice Question Boilerplate & Formula Sheet",
-        draft: `### Cauchy's Residue Formula & Integration Study Aid\n\nTo bypass activation energy on MA 102 complex integration, here is a quick study aid of the first crucial concept (Residue Theorem) and 2 mock questions to solve first:\n\n**Key Formula Reference:**\n$$\\oint_C f(z) dz = 2\\pi i \\sum \\text{Res}(f, z_k)$$\n\n---\n\n#### 1. Residue definition for Simple Pole:\n$$\\text{Res}(f, c) = \\lim_{z \\to c} (z-c)f(z)$$\n\n#### 2. Self-Study Warm-Up Questions:\n*   **Question 1:** Find the residue of $f(z) = \\frac{e^z}{z^2 + 1}$ at the pole $z = i$.\n*   **Question 2:** Evaluate $\\oint_C \\frac{z^2 + 1}{z(z-2)} dz$ where $C$ is the circle $|z| = 1$ oriented counterclockwise.\n\n*Would you like to generate full step-by-step notes or save this reference pack? Click Approve to mark this first move finished!*`,
-        approved: false
-      }
-    },
-    {
-      id: "seed-2",
-      title: "Email Prof. Sen regarding final project proposal approval",
-      deadline: "2026-06-26T17:00:00Z", // 3 days from June 23
-      effort_minutes: 20,
-      consequence: "medium",
-      source: "WhatsApp class group screenshot",
-      status: "pending",
-      next_actions: [
-        { id: "na-2-1", text: "Select final 3 project topics with abstract notes", completed: false },
-        { id: "na-2-2", text: "Draft structural flow highlighting why our team is qualified", completed: false },
-        { id: "na-2-3", text: "Send drafted email to Prof. Sen for early review", completed: false }
-      ],
-      artifact: {
-        type: "email",
-        title: "Draft Email to Professor Sen",
-        draft: `**Subject:** Approval Request: Group 12 Final Project Proposal - Clutch AI\n\nDear Professor Sen,\n\nI hope you are doing well.\n\nI am writing on behalf of Group 12 from Section B regarding our final project topic. We have drafted a proposal titled **\"Clutch: Reducing Task Activation Energy Using LLM Agents\"**.\n\nOur project proposes an innovative system designed to assist students and early-career solo founders in tackling task-initiation anxiety and procrastination by generating structured action plans and first drafts on-demand.\n\nWe have attached our 1-page abstract outlines for your kind review. Please let us know if we can proceed with this project direction or if you have any feedback to improve our scope.\n\nThank you for your time and guidance.\n\nWarm regards,\nParth Gupta (on behalf of Group 12)\nRoll No: B-14`,
-        approved: false
-      }
-    },
-    {
-      id: "seed-3",
-      title: "Pay electricity bill (BSES Yamuna)",
-      deadline: "2026-06-27T23:59:00Z", // 4 days from June 23
-      effort_minutes: 10,
-      consequence: "low",
-      source: "UPI/Bill text alert",
-      status: "pending",
-      next_actions: [
-        { id: "na-3-1", text: "Locate CA Number (101490281) on old bill copy", completed: false },
-        { id: "na-3-2", text: "Open GPay/Paytm and enter BSES Yamuna provider", completed: false },
-        { id: "na-3-3", text: "Confirm pending amount of ₹2,410 and complete transaction", completed: false }
-      ],
-      artifact: {
-        type: "upi",
-        title: "UPI Payment Helper",
-        draft: `### ⚡ BSES Yamuna Electricity Bill - ₹2,410\n\nSince bill payments can be a friction point, here is everything prepared for you to execute in one tap:\n\n*   **CA Number:** \`101490281\` (Copyable)\n*   **Provider:** BSES Yamuna Power Ltd.\n*   **Pending Amount:** ₹2,410\n*   **Due Date:** 27th June 2026\n\n**Quick Action Steps:**\n1.  Click GPay or Paytm (or search BSES Yamuna on your payment app).\n2.  Paste CA Number: \`101490281\`.\n3.  Verify the billing data matches ₹2,410, and authorize payments with your UPI PIN.\n\n*Once done, click Approve below to clear this from your focus stack!*`,
-        approved: false
-      }
-    }
-  ];
-}
-
 function ensureDataSetup(): Commitment[] {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
+  // Local file fallback (used only when no signed-in user id is present).
+  // Starts empty — no demo/seed data.
   if (!fs.existsSync(DATA_FILE)) {
-    const list = getSeedCommitments();
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2));
-    return list;
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+    return [];
   }
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf-8');
     return JSON.parse(raw);
   } catch (e) {
-    const list = getSeedCommitments();
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2));
-    return list;
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+    return [];
   }
 }
 
@@ -362,17 +288,13 @@ async function startServer() {
     res.json(withScores);
   });
 
-  // RESET Commitments
+  // RESET Commitments — clears the user's plate (no demo data is re-seeded).
   app.post('/api/commitments/reset', async (req, res) => {
-    const list = getSeedCommitments();
-    await saveAllCommitmentsForRequest(req, list);
-    const withScores = list.map(c => ({
-      ...c,
-      panic_score: calculatePanicScore(c.deadline, c.effort_minutes, c.consequence),
-      next_actions: c.next_actions || []
-    }));
-    withScores.sort((a, b) => (b.panic_score || 0) - (a.panic_score || 0));
-    res.json(withScores);
+    const existing = await getCommitmentsForRequest(req);
+    for (const item of existing) {
+      await deleteCommitmentForRequest(req, item.id);
+    }
+    res.json([]);
   });
 
   // CREATE Commitment manually

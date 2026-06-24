@@ -5,7 +5,15 @@
 
 import { useState, useEffect, useRef, FormEvent, DragEvent, MouseEvent, CSSProperties } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, googleProvider, signInWithPopup, signOut } from './firebase';
+import {
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from './firebase';
 import {
   Sparkles,
   Clock,
@@ -143,6 +151,13 @@ interface Commitment {
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [authName, setAuthName] = useState<string>('');
+  const [authEmail, setAuthEmail] = useState<string>('');
+  const [authPassword, setAuthPassword] = useState<string>('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthing, setIsAuthing] = useState<boolean>(false);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
 
   const [accent, setAccent] = useState<'indigo' | 'teal'>(() => {
@@ -410,6 +425,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      setAuthReady(true);
     });
     return () => unsubscribe();
   }, []);
@@ -436,12 +452,54 @@ export default function App() {
 
   const handleAuthSignIn = async () => {
     try {
-      setErrorText(null);
+      setAuthError(null);
       await signInWithPopup(auth, googleProvider);
-      setStatusMessage("Sign-In Successful! Welcome back.");
+      setStatusMessage("Welcome to Clutch.");
     } catch (err: any) {
       console.error("Popup Sign-in Error:", err);
-      setErrorText(err.message || 'Google Auth Popup closed or blocked.');
+      setAuthError(prettyAuthError(err));
+    }
+  };
+
+  // Friendlier copy for the common Firebase auth error codes.
+  const prettyAuthError = (err: any): string => {
+    const code = err?.code || '';
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found'))
+      return 'That email or password doesn’t match. Try again.';
+    if (code.includes('email-already-in-use')) return 'An account already exists for that email. Sign in instead.';
+    if (code.includes('weak-password')) return 'Use a password of at least 6 characters.';
+    if (code.includes('invalid-email')) return 'That doesn’t look like a valid email.';
+    if (code.includes('popup-closed')) return 'Sign-in was cancelled.';
+    if (code.includes('operation-not-allowed')) return 'This sign-in method isn’t enabled for the project yet.';
+    return err?.message || 'Something went wrong. Please try again.';
+  };
+
+  const handleEmailAuth = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    if (!authEmail.trim() || !authPassword) {
+      setAuthError('Enter your email and password.');
+      return;
+    }
+    if (authMode === 'signup' && !authName.trim()) {
+      setAuthError('What should Clutch call you?');
+      return;
+    }
+    try {
+      setIsAuthing(true);
+      if (authMode === 'signup') {
+        const cred = await createUserWithEmailAndPassword(auth, authEmail.trim(), authPassword);
+        if (authName.trim()) await updateProfile(cred.user, { displayName: authName.trim() });
+        setStatusMessage(`Welcome to Clutch, ${authName.trim().split(' ')[0]}.`);
+      } else {
+        await signInWithEmailAndPassword(auth, authEmail.trim(), authPassword);
+        setStatusMessage('Welcome back.');
+      }
+      setAuthPassword('');
+    } catch (err: any) {
+      setAuthError(prettyAuthError(err));
+    } finally {
+      setIsAuthing(false);
     }
   };
 
@@ -1403,6 +1461,118 @@ export default function App() {
     );
   };
 
+  // ───────────────────────── Auth gate ─────────────────────────
+  if (!authReady) {
+    return (
+      <div style={accentStyles} className="font-sans antialiased h-screen w-full flex items-center justify-center bg-[#F3EFE6]">
+        <div className="flex items-center gap-2.5 text-[#6B675E]">
+          <span className="w-[10px] h-[10px] rounded-full bg-[var(--accent)] animate-clutch-breathe" />
+          <span className="text-[14.5px]">Getting things ready…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div style={accentStyles} className="font-sans antialiased text-[#1C1B19] h-screen w-full flex items-center justify-center bg-[#E8E3D7] px-6">
+        <div className="w-full max-w-[400px]">
+          <div className="flex items-center gap-2.5 mb-[26px]">
+            <div className="w-[34px] h-[34px] rounded-[10px] bg-[var(--accent)] flex items-center justify-center shadow-[0_6px_14px_-6px_var(--accent-strong)]">
+              <svg width="13" height="14" viewBox="0 0 12 13" fill="#fff"><path d="M1.5 1.3 11 6.5 1.5 11.7Z" /></svg>
+            </div>
+            <span className="text-[20px] font-semibold tracking-[-0.02em]">Clutch</span>
+          </div>
+
+          <h1 className="m-0 text-[27px] font-semibold tracking-[-0.025em] leading-[1.15] mb-1.5">
+            {authMode === 'signin' ? 'Welcome back.' : 'Make a clean start.'}
+          </h1>
+          <p className="m-0 text-[15px] text-[#6B675E] leading-[1.4] mb-7">
+            {authMode === 'signin'
+              ? 'Sign in and Clutch will pick up where you left off.'
+              : 'Create an account — your commitments stay yours and private.'}
+          </p>
+
+          <form onSubmit={handleEmailAuth} className="bg-[#FCFAF5] border border-[#EAE4D7] rounded-[22px] p-6 shadow-[0_1px_2px_rgba(28,27,25,.04),0_30px_60px_-40px_rgba(28,27,25,.3)] space-y-3.5">
+            {authMode === 'signup' && (
+              <div>
+                <label className="block font-mono text-[11px] tracking-[0.12em] text-[#9D988C] uppercase mb-1.5">Name</label>
+                <input
+                  value={authName}
+                  onChange={e => setAuthName(e.target.value)}
+                  placeholder="Sam Ortiz"
+                  className="w-full h-[46px] rounded-[12px] border border-[#E6E0D3] bg-white px-3.5 text-[15px] text-[#1C1B19] outline-none focus:border-[var(--accent)] placeholder:text-[#B6A98E]"
+                />
+              </div>
+            )}
+            <div>
+              <label className="block font-mono text-[11px] tracking-[0.12em] text-[#9D988C] uppercase mb-1.5">Email</label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={authEmail}
+                onChange={e => setAuthEmail(e.target.value)}
+                placeholder="you@email.com"
+                className="w-full h-[46px] rounded-[12px] border border-[#E6E0D3] bg-white px-3.5 text-[15px] text-[#1C1B19] outline-none focus:border-[var(--accent)] placeholder:text-[#B6A98E]"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-[11px] tracking-[0.12em] text-[#9D988C] uppercase mb-1.5">Password</label>
+              <input
+                type="password"
+                autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'}
+                value={authPassword}
+                onChange={e => setAuthPassword(e.target.value)}
+                placeholder={authMode === 'signin' ? 'Your password' : 'At least 6 characters'}
+                className="w-full h-[46px] rounded-[12px] border border-[#E6E0D3] bg-white px-3.5 text-[15px] text-[#1C1B19] outline-none focus:border-[var(--accent)] placeholder:text-[#B6A98E]"
+              />
+            </div>
+
+            {authError && (
+              <div className="flex items-center gap-2 text-[13px] text-[#B23A48] bg-[#F8EBEC] border border-[#EBD2D5] rounded-[11px] px-3 py-2.5">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#B23A48" strokeWidth="1.7"><circle cx="8" cy="8" r="6.5" /><path d="M8 4.5v4M8 11h.01" strokeLinecap="round" /></svg>
+                <span>{authError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isAuthing}
+              className="w-full h-[50px] rounded-[14px] bg-[var(--accent)] hover:bg-[var(--accent-strong)] disabled:opacity-60 text-white text-[15.5px] font-semibold cursor-pointer border-none shadow-[0_10px_22px_-10px_var(--accent-strong)] transition-colors"
+            >
+              {isAuthing ? 'One moment…' : authMode === 'signin' ? 'Sign in' : 'Create account'}
+            </button>
+
+            <div className="flex items-center gap-3 py-0.5">
+              <span className="flex-1 h-px bg-[#EAE4D7]" />
+              <span className="font-mono text-[10.5px] tracking-[0.12em] text-[#B6A98E] uppercase">or</span>
+              <span className="flex-1 h-px bg-[#EAE4D7]" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAuthSignIn}
+              className="w-full h-[48px] rounded-[14px] border border-[#E0DACB] hover:border-[#CFC8B8] bg-white text-[#3A352C] text-[14.5px] font-semibold cursor-pointer flex items-center justify-center gap-2.5 transition-colors"
+            >
+              <svg width="17" height="17" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" /><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18Z" /><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34Z" /><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58Z" /></svg>
+              Continue with Google
+            </button>
+          </form>
+
+          <div className="text-center mt-5 text-[14px] text-[#6B675E]">
+            {authMode === 'signin' ? "New to Clutch? " : 'Already have an account? '}
+            <button
+              onClick={() => { setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); setAuthError(null); }}
+              className="font-semibold text-[var(--accent)] hover:text-[var(--accent-strong)] bg-transparent border-none cursor-pointer"
+            >
+              {authMode === 'signin' ? 'Create an account' : 'Sign in'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={accentStyles} className="font-sans antialiased text-[#1C1B19]">
 
@@ -1441,12 +1611,25 @@ export default function App() {
             <span className="text-[13px] font-medium text-[#C26A3E]">Panic Mode</span>
           </button>
 
-          <div className="mt-auto flex items-center gap-2.5 pl-1">
-            <div className="w-[34px] h-[34px] rounded-full bg-[#E4DFD2] flex items-center justify-center text-[13px] font-semibold text-[#6B675E]">S</div>
-            <div>
-              <div className="text-[13.5px] font-semibold">Sam Ortiz</div>
-              <div className="text-[11.5px] text-[#A59E8E]">Student</div>
+          <div className="mt-auto flex items-center gap-2.5 pl-1 group">
+            {currentUser?.photoURL ? (
+              <img src={currentUser.photoURL} alt="" className="w-[34px] h-[34px] rounded-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-[34px] h-[34px] rounded-full bg-[#E4DFD2] flex items-center justify-center text-[13px] font-semibold text-[#6B675E]">
+                {(currentUser?.displayName || currentUser?.email || '?').trim().charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-[13.5px] font-semibold truncate">{currentUser?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : 'You')}</div>
+              <div className="text-[11.5px] text-[#A59E8E] truncate">{currentUser?.email || 'Signed in'}</div>
             </div>
+            <button
+              onClick={handleAuthSignOut}
+              title="Sign out"
+              className="opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none cursor-pointer text-[#A59E8E] hover:text-[#6B675E] p-1 shrink-0"
+            >
+              <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M11.5 13v1.5a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 14.5v-11A1.5 1.5 0 0 1 4.5 2H10a1.5 1.5 0 0 1 1.5 1.5V5M7.5 9h8m0 0-2.5-2.5M15.5 9 13 11.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
           </div>
         </div>
 
