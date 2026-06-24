@@ -1,31 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Inter", sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Geist", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
-
-  /* Intermediate palette steps used throughout App.tsx (not in Tailwind's
-     default scale). Defining them here makes those existing utility classes
-     resolve instead of silently rendering with no color. */
-  --color-slate-250: #d6dde7;
-  --color-slate-350: #aab6c6;
-  --color-slate-450: #7e8da3;
-  --color-slate-850: #18212f;
-
-  --color-rose-350: #fc8a99;
-  --color-rose-450: #f7596f;
-  --color-rose-550: #ea3050;
-  --color-rose-650: #d31840;
-
-  --color-emerald-150: #bef7d9;
-  --color-emerald-250: #8cefc3;
-  --color-emerald-550: #0ba373;
-  --color-emerald-650: #04875f;
-  --color-emerald-750: #036b4e;
-
-  --color-amber-850: #863a0e;
 }
 
 /* Animations from the new design system mockup */

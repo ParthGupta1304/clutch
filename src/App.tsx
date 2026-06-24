@@ -26,8 +26,6 @@ import {
   HelpCircle,
   FileCode,
   Calendar,
-  CalendarPlus,
-  CalendarClock,
   X,
   Smartphone,
   Mail,
@@ -158,10 +156,10 @@ export default function App() {
         '--accent-soft': '#C7E0D9',
       } as CSSProperties
     : {
-        '--accent': '#4F46E5',
-        '--accent-strong': '#4338CA',
-        '--accent-tint': '#EEF2FF',
-        '--accent-soft': '#E0E7FF',
+        '--accent': '#3E3C8C',
+        '--accent-strong': '#2E2C6E',
+        '--accent-tint': '#ECEBF6',
+        '--accent-soft': '#D9D7EE',
       } as CSSProperties;
 
   const authFetch = async (url: string, options: RequestInit = {}) => {
@@ -655,71 +653,6 @@ export default function App() {
     } catch {
       return { text: dateStr, style: 'text-slate-600' };
     }
-  };
-
-  // ─── Schedule: propose right-sized focus blocks, then open Google Calendar (approve-first) ───
-  const proposeCalendarBlocks = (commitment: Commitment) => {
-    const now = Date.now();
-    const deadline = new Date(commitment.deadline).getTime();
-    const effort = Math.max(10, commitment.effort_minutes || 30);
-
-    // Right-size each session: short tasks stay a single block; longer ones split into ~50-min focus blocks.
-    const sessionLen = effort <= 40 ? effort : 50;
-    const numSessions = Math.min(4, Math.max(1, Math.round(effort / sessionLen)));
-
-    const hoursUntil = (deadline - now) / 3600000;
-    const blocks: { start: Date; end: Date }[] = [];
-
-    if (hoursUntil <= 24) {
-      // Crunch mode: stack blocks today, starting ~1h from now, back-to-back with short breathers.
-      let cursor = now + 60 * 60 * 1000;
-      for (let i = 0; i < numSessions; i++) {
-        const start = new Date(cursor);
-        const end = new Date(cursor + sessionLen * 60 * 1000);
-        if (end.getTime() > deadline) break;
-        blocks.push({ start, end });
-        cursor = end.getTime() + 15 * 60 * 1000;
-      }
-      if (blocks.length === 0) {
-        const start = new Date(now + 30 * 60 * 1000);
-        blocks.push({ start, end: new Date(start.getTime() + sessionLen * 60 * 1000) });
-      }
-    } else {
-      // Spread one block per upcoming morning at 10:00 local, all before the deadline.
-      for (let i = 0; i < numSessions; i++) {
-        const start = new Date(now);
-        start.setDate(start.getDate() + i + 1);
-        start.setHours(10, 0, 0, 0);
-        const end = new Date(start.getTime() + sessionLen * 60 * 1000);
-        if (end.getTime() > deadline) break;
-        blocks.push({ start, end });
-      }
-      if (blocks.length === 0) {
-        const start = new Date(now + 60 * 60 * 1000);
-        blocks.push({ start, end: new Date(start.getTime() + sessionLen * 60 * 1000) });
-      }
-    }
-    return { blocks, sessionLen };
-  };
-
-  const toCalStamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-
-  const formatBlockLabel = (start: Date, end: Date) => {
-    const day = start.toLocaleDateString('en-IN', { weekday: 'short' });
-    const s = start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
-    const e = end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
-    return `${day} ${s}–${e}`;
-  };
-
-  const openGoogleCalendar = (commitment: Commitment, start: Date, end: Date) => {
-    const text = encodeURIComponent(`Clutch focus: ${commitment.title}`);
-    const dates = `${toCalStamp(start)}/${toCalStamp(end)}`;
-    const details = encodeURIComponent(
-      `Focus block proposed by Clutch to build momentum on "${commitment.title}" before its deadline.\n\nDeadline: ${new Date(commitment.deadline).toLocaleString('en-IN')}`
-    );
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-    setStatusMessage('Opened Google Calendar — review and save your focus block.');
   };
 
   // Drag and Drop files to analyze
@@ -1307,20 +1240,16 @@ export default function App() {
   const details = activeTask ? getPanicBreakdown(activeTask, nowLabel) : null;
 
   return (
-    <div
+    <div 
       style={accentStyles}
-      className={`min-h-screen flex flex-col font-sans transition-all duration-300 antialiased ${
-        isPanicMode
-          ? 'bg-[#0B0B12] text-slate-100 selection:bg-rose-500/30 selection:text-white'
-          : 'bg-[#E8E3D7] text-[#1C1B19] selection:bg-[var(--accent-soft)] selection:text-[var(--accent-strong)]'
-      }`}
+      className="min-h-screen bg-[#E8E3D7] text-[#1C1B19] flex flex-col font-sans transition-all duration-300 antialiased selection:bg-[var(--accent-soft)] selection:text-[var(--accent-strong)]"
     >
       
       {/* Top micro notifications header */}
       <div className="h-[3px] bg-gradient-to-r from-indigo-500 via-rose-500 to-amber-500 w-full" id="brand-indicator"></div>
 
       {/* Main Bar Navigation */}
-      <header className={`border-b border-[#D7D1C2] bg-[#F3EFE6]/90 backdrop-blur-md sticky top-0 z-40 transition-shadow duration-300 shadow-[0_1px_3px_rgba(28,27,25,0.05)] text-[#1C1B19] ${isPanicMode ? 'hidden' : ''}`} id="header-bar">
+      <header className="border-b border-[#D7D1C2] bg-[#F3EFE6]/90 backdrop-blur-md sticky top-0 z-40 transition-shadow duration-300 shadow-[0_1px_3px_rgba(28,27,25,0.05)] text-[#1C1B19]" id="header-bar">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-[30px] h-[30px] rounded-[9px] bg-[var(--accent)] flex items-center justify-center glow-accent shrink-0" id="logo-block">
@@ -1345,7 +1274,7 @@ export default function App() {
                   safeSetLocalStorage('clutch_accent', 'indigo');
                 }} 
                 title="Indigo Theme" 
-                className={`w-[26px] h-[26px] rounded-full bg-[#4F46E5] border-none cursor-pointer relative flex items-center justify-center p-0 transition-all ${accent === 'indigo' ? 'ring-2 ring-[#1C1B19] ring-offset-1' : 'opacity-80 hover:opacity-100'}`}
+                className={`w-[26px] h-[26px] rounded-full bg-[#3E3C8C] border-none cursor-pointer relative flex items-center justify-center p-0 transition-all ${accent === 'indigo' ? 'ring-2 ring-[#1C1B19] ring-offset-1' : 'opacity-80 hover:opacity-100'}`}
               >
                 {accent === 'indigo' && <span className="absolute inset-0 rounded-full border border-white"></span>}
               </button>
@@ -1481,17 +1410,7 @@ export default function App() {
       {/* Main Full-Scale Canvas */}
       {isPanicMode ? (
         <main className="flex-grow w-full py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto" id="panic-layout">
-
-          {/* Subtle, always-reachable exit (full-screen takeover) */}
-          <button
-            onClick={() => setIsPanicMode(false)}
-            className="fixed top-5 right-5 z-50 text-[11px] font-mono text-slate-400 hover:text-white border border-slate-700/60 hover:border-slate-500 bg-slate-900/40 backdrop-blur-sm rounded-full px-3.5 py-1.5 transition-colors cursor-pointer flex items-center gap-1.5"
-            id="panic-exit-top"
-          >
-            <X className="w-3.5 h-3.5" />
-            <span>Exit panic mode</span>
-          </button>
-
+          
           {!highestPanicTask ? (
             /* Calm State: No pending tasks! */
             <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 md:p-16 text-center space-y-6 max-w-2xl mx-auto shadow-xl" id="panic-all-clear">
@@ -1545,7 +1464,7 @@ export default function App() {
                   <div className="text-[10px] uppercase font-bold text-slate-400 font-mono tracking-widest mb-1">
                     COUNTDOWN TO DEADLINE
                   </div>
-                  <div className="font-mono text-2xl md:text-3xl font-black text-amber-400 tracking-tight tabular-nums">
+                  <div className="font-mono text-base md:text-lg font-black text-rose-400 tracking-tight">
                     {getCountdownText(highestPanicTask.deadline, nowLabel)}
                   </div>
                   <div className="text-[9px] text-slate-500 font-mono mt-1">
@@ -2177,7 +2096,7 @@ export default function App() {
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-1.5">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display">The First Move</h3>
-                      <span className="text-[9px] uppercase font-mono tracking-wider font-bold bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] px-1.5 py-0.5 rounded leading-none">Auto-Initiated</span>
+                      <span className="text-[9px] uppercase font-mono tracking-wider font-bold bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] px-1.5 py-0.5 rounded leading-none">Auto-Initiated</span>
                     </div>
                     <p className="text-xs text-[#6B675E]">Approve this generated boilerplate, email, study template, or outline helper to build starting momentum.</p>
                   </div>
@@ -2324,50 +2243,13 @@ export default function App() {
 
               </div>
 
-              {/* SCHEDULE: propose right-sized focus blocks (approve-first) */}
-              {activeTask && activeTask.status !== 'completed' && (() => {
-                const { blocks, sessionLen } = proposeCalendarBlocks(activeTask);
-                if (blocks.length === 0) return null;
-                return (
-                  <div className="bg-[#FCFAF5] border border-[#E6E0D3] rounded-2xl p-6 shadow-card mt-6" id="schedule-segment">
-                    <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
-                          <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded flex items-center justify-center"><CalendarClock className="w-4 h-4" /></span>
-                          <span>Schedule focus blocks</span>
-                        </h3>
-                        <p className="text-xs text-[#6B675E]">
-                          Clutch right-sized {blocks.length} {sessionLen}-min block{blocks.length > 1 ? 's' : ''} before your deadline. Approve any to add it to Google Calendar.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2.5">
-                      {blocks.map((b, i) => (
-                        <button
-                          key={i}
-                          onClick={() => openGoogleCalendar(activeTask, b.start, b.end)}
-                          className="group flex items-center gap-2 bg-[#F3EFE6] hover:bg-[var(--accent-tint)] border border-[#E6E0D3] hover:border-[var(--accent-soft)] rounded-full pl-3 pr-3.5 py-2 text-xs font-medium text-[#1C1B19] transition-all cursor-pointer shadow-sm"
-                          title="Open a pre-filled Google Calendar event"
-                        >
-                          <CalendarPlus className="w-3.5 h-3.5 text-[var(--accent)]" />
-                          <span className="font-mono">{formatBlockLabel(b.start, b.end)}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-[#9D988C] mt-3 font-mono">
-                      Opens a pre-filled Google Calendar event in a new tab — nothing is added until you save it.
-                    </p>
-                  </div>
-                );
-              })()}
-
               {/* STUDY PACK INTERACTIVE PANEL */}
               {activeTask && (activeTask.artifact?.type === 'study' || activeTask.title.toLowerCase().match(/(study|exam|assignment|syllabus|test|quiz|lecture|notes|revision|read)/i)) && (
                 <div className="bg-[#FCFAF5] border border-[#E6E0D3] rounded-2xl p-6 shadow-card mt-6 animate-fade-in" id="study-pack-segment">
                   <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
                     <div className="space-y-1">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
-                        <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded">📚</span>
+                        <span className="bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] p-1 rounded">📚</span>
                         <span>Interactive Adaptive Study Pack</span>
                       </h3>
                       <p className="text-xs text-[#6B675E]">Practice predictive questions and train memorization via flashcards.</p>
@@ -2624,7 +2506,7 @@ export default function App() {
                   <div className="flex items-start justify-between border-b border-[#E6E0D3] pb-4 mb-4">
                     <div className="space-y-1">
                       <h3 className="font-bold text-[#1C1B19] text-sm tracking-tight font-display flex items-center gap-2">
-                        <span className="bg-[var(--accent-tint)] text-[var(--accent-strong)] border border-[var(--accent-soft)] p-1 rounded"><Cpu className="w-4 h-4" /></span>
+                        <span className="bg-[#ECEBF6] text-[var(--accent-strong)] border border-[#D9D7EE] p-1 rounded"><Cpu className="w-4 h-4" /></span>
                         <span>Expert Agent Mode: Sandbox Solver</span>
                       </h3>
                       <p className="text-xs text-[#6B675E]">Run multi-step automated searches, code trials, and site reading inside Google Cloud.</p>
